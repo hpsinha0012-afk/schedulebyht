@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hritik × Hetal</title>
+<meta name="theme-color" content="#14121f">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💞</text></svg>">
+<style>
+  :root{
+    --bg:#14121f; --panel:#1d1a2e; --panel2:#262239; --line:#36304f; --text:#ece9f7; --muted:#a49fbd;
+    --hr:#2dd4bf; --hr-bg:rgba(45,212,191,.16); --he:#fb7185; --he-bg:rgba(251,113,133,.16);
+    --free:#a3e635; --free-bg:rgba(163,230,53,.14); --exam:#fbbf24; --exam-bg:rgba(251,191,36,.18);
+    --hol:#c4b5fd; --hol-bg:rgba(196,181,253,.14);
+  }
+  @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+    --bg:#f7f5fc; --panel:#ffffff; --panel2:#f1eef9; --line:#e0dbef; --text:#1e1b2e; --muted:#6b6585;
+    --hr:#0d9488; --hr-bg:rgba(13,148,136,.12); --he:#e11d48; --he-bg:rgba(225,29,72,.10);
+    --free:#4d7c0f; --free-bg:rgba(101,163,13,.14); --exam:#b45309; --exam-bg:rgba(245,158,11,.16);
+    --hol:#6d28d9; --hol-bg:rgba(109,40,217,.10);
+  }}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 40px}
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:14px}
+  h1{font-size:22px;margin:0;letter-spacing:-.01em}
+  h1 .x{color:var(--muted);font-weight:400;margin:0 2px}
+  h1 .a{color:var(--hr)} h1 .b{color:var(--he)}
+  .sub{color:var(--muted);font-size:13px}
+  .grow{flex:1}
+  .btn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 12px}
+  .btn:hover{border-color:var(--muted)}
+  .btn.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:12px}
+  .tabs .btn{white-space:nowrap}
+  .nav{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .nav .date{font-weight:600;font-size:17px;min-width:170px;text-align:center}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  .card h2{font-size:15px;margin:0 0 10px}
+  .muted{color:var(--muted)} .small{font-size:12.5px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{border-radius:999px;padding:3px 10px;font-size:12.5px;border:1px solid var(--line);background:var(--panel2);white-space:nowrap}
+  .chip.hr{border-color:var(--hr);color:var(--hr);background:var(--hr-bg)}
+  .chip.he{border-color:var(--he);color:var(--he);background:var(--he-bg)}
+  .chip.free{border-color:var(--free);color:var(--free);background:var(--free-bg)}
+  .chip.exam{border-color:var(--exam);color:var(--exam);background:var(--exam-bg)}
+  .chip.hol{border-color:var(--hol);color:var(--hol);background:var(--hol-bg)}
+  /* day timeline */
+  .tl{display:grid;grid-template-columns:44px 1fr 1fr;gap:0 8px;position:relative}
+  .tl .lanehead{font-weight:600;font-size:13px;padding:0 0 6px;display:flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .tl .axis,.tl .lane{position:relative}
+  .tl .lane{border-left:1px dashed var(--line)}
+  .hline{position:absolute;left:0;right:0;border-top:1px solid var(--line);opacity:.55}
+  .hlbl{position:absolute;right:4px;font-size:11px;color:var(--muted);transform:translateY(-50%)}
+  .blk{position:absolute;left:4px;right:2px;border-radius:9px;padding:4px 7px;font-size:12px;overflow:hidden;line-height:1.25;border-left:3px solid}
+  .blk b{font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .blk .t{opacity:.85}
+  .blk.hr{background:var(--hr-bg);border-color:var(--hr)}
+  .blk.he{background:var(--he-bg);border-color:var(--he)}
+  .blk.exam{background:var(--exam-bg);border-color:var(--exam)}
+  .blk.hol{background:var(--hol-bg);border-color:var(--hol)}
+  .blk.dim{background:transparent;border:1px dashed var(--muted);border-left:3px dashed var(--muted);color:var(--muted)}
+  .fband{position:absolute;left:44px;right:0;background:var(--free-bg);border-top:1px solid var(--free);border-bottom:1px solid var(--free);pointer-events:none}
+  .fband span{position:absolute;right:6px;top:2px;font-size:11px;color:var(--free);font-weight:600}
+  .nowline{position:absolute;left:44px;right:0;border-top:2px solid var(--he);z-index:3}
+  .banner{border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:13.5px}
+  .banner.hol{background:var(--hol-bg);color:var(--hol)} .banner.he{background:var(--he-bg)} .banner.hr{background:var(--hr-bg)}
+  /* lists */
+  .row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}
+  .row:first-child{border-top:0}
+  .row .when{min-width:96px;font-weight:600;font-size:13.5px}
+  .row .what{flex:1;min-width:0}
+  .who{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  .who.hr{color:var(--hr)} .who.he{color:var(--he)}
+  .week{display:grid;gap:10px}
+  .wd{display:grid;grid-template-columns:86px 1fr;gap:10px;align-items:start;cursor:pointer}
+  .wd:hover .wdate{color:var(--text)}
+  .wdate{font-weight:600;color:var(--muted)} .wdate.today{color:var(--he)}
+  .wcol{display:grid;gap:5px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .empty{color:var(--muted);font-style:italic;padding:6px 0}
+  footer{color:var(--muted);font-size:12px;text-align:center;margin-top:24px;line-height:1.6}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13.5px;z-index:9;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+  .toast.show{opacity:1}
+  @media (max-width:560px){
+    .tl{grid-template-columns:36px 1fr 1fr;gap:0 5px}
+    .fband,.nowline{left:36px}
+    .row .when{min-width:78px}
+    .wd{grid-template-columns:1fr}
+    .nav .date{min-width:0;flex:1}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="a">Hritik</span><span class="x">×</span><span class="b">Hetal</span></h1>
+      <div class="sub">Hritik · PGP2 Term V &nbsp;|&nbsp; Hetal · PGP1 Term II, Section B</div>
+    </div>
+    <div class="grow"></div>
+    <button class="btn" id="syncBtn" title="Re-fetch Hritik's timetable from the live Term V sheet">🔄 Sync</button>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button class="btn" data-t="day">Day</button>
+    <button class="btn" data-t="week">Week</button>
+    <button class="btn" data-t="free">🟢 Free together</button>
+    <button class="btn" data-t="exams">📝 Exams</button>
+  </div>
+
+  <div id="view"></div>
+
+  <footer>
+    Hritik: live from the Term V sheet<span id="syncInfo"></span> · Hetal: <span id="hSrc"></span><br>
+    Free time is counted between 8 AM and 10 PM, gaps of 30 min or more.<br>
+    made for Hritik &amp; Hetal 💞 · <span id="build">build v2026-10-26.1200</span>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="hritik.js"></script>
+<script src="hetal.js"></script>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2600);}
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+
+// ---------- time helpers ----------
+const toMin=s=>{const [h,m]=s.split(':').map(Number);return h*60+m;};
+const toHM=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const ampm=m=>{let h=Math.floor(m/60),mm=m%60;const ap=h>=12?'PM':'AM';h=h%12||12;return h+(mm?':'+String(mm).padStart(2,'0'):'')+' '+ap;};
+const range=(a,b)=>ampm(a)+' – '+ampm(b);
+const dur=m=>{const h=Math.floor(m/60),mm=m%60;return (h?h+'h':'')+(h&&mm?' ':'')+(mm?mm+'m':'');};
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const addDays=(s,n)=>{const d=new Date(s+'T00:00');d.setDate(d.getDate()+n);return iso(d);};
+const fmtLong=s=>new Date(s+'T00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'});
+const fmtShort=s=>new Date(s+'T00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+const dayName=s=>new Date(s+'T00:00').toLocaleDateString('en-US',{weekday:'long'});
+const DAY0=8*60, DAY1=22*60, MIN_GAP=30;
+
+// ---------- Hritik (PGP2, Term V) ----------
+const HR_SLOTS=[[480,570],[600,690],[720,810],[870,960],[990,1080],[1110,1200],[1230,1320]];
+const HR_SEC={AAIM:'',BAV:'A',BMD:'B',DM:'B',EF:'',FISM:'',FME:'A',MCBPP:'A'};   // '' = single section
+const HR_HOME='A';
+const HR_NAMES={AAIM:'Agentic AI for Managers',BAV:'Business Analysis & Valuation',BMD:'Business Models',DM:'Digital Marketing',EF:'Entrepreneurship & Finance',FISM:'Fixed Income Securities & Markets',FME:'Financial Modelling using MS Excel',MCBPP:'Managing Consulting Business'};
+const ALL_CODES=new Set(['AAIM','AOA','BAV','BMD','BOM','CBM','CRM','DM','DSC','ECOM','EF','FISM','FMCG','FME','GTSDM','LWM','MCBPP','MDT','MST','RMS','SCA','SDM','SLTDM','SOM','SP']);
+const LIVE_SHEET='1AB9tNharptnkuYGtBCAsadEwKU0fCnbvav5cTDrR1Ak';
+const HOLI=/DUSSEH|GANDHI|DIWALI|DEEPAVALI|JAYANTI|CHRISTMAS|HOLIDAY|HOLI\b|EID|GURU NANAK|DURGA/i;
+const EXAM=/MID[\s-]*TERM|END[\s-]*TERM|\bEXAM|\bQUIZ/i;
+
+function validSched(a){
+  if(!Array.isArray(a)||a.length<50) return false;
+  const ok=/^(Section A|Section B|Single Section)$/i; const dd=new Set();
+  for(const r of a){ if(!r||!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||!ok.test(r.section||'')||!Array.isArray(r.slots)||r.slots.length!==7) return false; dd.add(r.date); }
+  return dd.size>=15;
+}
+let SCH=window.SCHEDULE||[];
+{ const c=store.get('ht_sched',null); if(validSched(c)) SCH=c; }
+const syncState=store.get('ht_sync',{at:0});
+
+// "5 PM-6 PM", "8.30 PM to 9.30 PM", "5:00-6:30 PM" inside a cell override the slot time
+function timesIn(txt){
+  const m=txt.match(/(\d{1,2})(?:[.:](\d{2}))?\s*(AM|PM)?\s*(?:-|–|to)\s*(\d{1,2})(?:[.:](\d{2}))?\s*(AM|PM)/i);
+  if(!m) return null;
+  const cv=(h,mm,ap)=>{h=+h;mm=+(mm||0);ap=(ap||'').toUpperCase();if(ap==='PM'&&h<12)h+=12;if(ap==='AM'&&h===12)h=0;return h*60+mm;};
+  const ap2=m[6], ap1=m[3]||ap2;
+  const a=cv(m[1],m[2],ap1), b=cv(m[4],m[5],ap2);
+  return b>a?[a,b]:null;
+}
+function hritikDay(date){
+  const rows=SCH.filter(r=>r.date===date);
+  if(!rows.length) return null;
+  const out=[], seen=new Set();
+  rows.forEach(r=>r.slots.forEach((cell,si)=>{
+    cell=String(cell||'').replace(/\s+/g,' ').trim();
+    if(!cell||cell.length<3||/^lunch/i.test(cell)) return;
+    let [s,e]=HR_SLOTS[si];
+    const m=cell.match(/^([A-Z]{2,6})\s*[-\s]*\s*(\d+)/), m2=cell.match(/^([A-Z]{2,6})\b/);
+    const code=(m&&ALL_CODES.has(m[1]))?m[1]:(m2&&ALL_CODES.has(m2[1]))?m2[1]:null;
+    const sess=(m&&ALL_CODES.has(m[1]))?m[2]:null;
+    const tt=timesIn(cell); if(tt){[s,e]=tt;}
+    if(code){
+      if(!(code in HR_SEC)) return;                                  // not Hritik's course
+      const cs=HR_SEC[code]; let unsure=false;
+      if(sess==null){ const k='x|'+cell; if(seen.has(k)) return; seen.add(k); }
+      else if(r.section==='Single Section'||(cs&&r.section==='Section '+cs)){}
+      else if(!cs&&r.section!=='Single Section') unsure=true;
+      else return;
+      const k2=code+'|'+sess+'|'+si+'|'+unsure; if(sess!=null&&seen.has(k2)) return; seen.add(k2);
+      const kind=EXAM.test(cell)?'exam':'class';
+      out.push({s,e,kind,code,title:cell.replace(/\s*\(\s*Prof[^)]*\)?/i,'').trim(),prof:(cell.match(/\((Prof[^)]*)\)?/i)||[])[1]||'',unsure,sec:r.section});
+    } else {
+      if(!(r.section==='Section '+HR_HOME||r.section==='Single Section')) return;
+      const k='e|'+cell; if(seen.has(k)) return; seen.add(k);
+      if(HOLI.test(cell)) out.push({s:0,e:1439,kind:'holiday',title:titleCase(cell)});
+      else out.push({s,e,kind:EXAM.test(cell)?'exam':'event',title:cell});
+    }
+  }));
+  return out.sort((a,b)=>a.s-b.s);
+}
+const titleCase=s=>s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+
+// ---------- Hetal (PGP1, Section B) ----------
+function hetalDay(date){
+  const a=(window.HETAL||{})[date];
+  if(!a) return null;
+  return a.map(o=>({s:toMin(o.start),e:toMin(o.end),kind:o.kind,code:o.code||'',title:o.title,prof:o.prof||'',room:o.room||'',note:o.note||''})).sort((x,y)=>x.s-y.s);
+}
+
+// ---------- free-time engine ----------
+const isBusy=it=>it.kind!=='holiday'&&it.kind!=='note';
+function freeWindows(lists,lo,hi,minGap){
+  const busy=[];
+  lists.forEach(l=>(l||[]).filter(isBusy).forEach(i=>busy.push([Math.max(lo,i.s),Math.min(hi,i.e)])));
+  busy.sort((a,b)=>a[0]-b[0]);
+  const free=[]; let cur=lo;
+  for(const [a,b] of busy){ if(b<=cur) continue; if(a>cur && a-cur>=minGap) free.push([cur,a]); cur=Math.max(cur,b); }
+  if(hi-cur>=minGap) free.push([cur,hi]);
+  return free;
+}
+function dayInfo(date){
+  const hr=hritikDay(date), he=hetalDay(date);
+  const known=[hr,he].filter(Boolean);
+  const free=known.length?freeWindows([hr,he],DAY0,DAY1,MIN_GAP):[];
+  return {hr,he,free,partial:known.length<2};
+}
+
+// ---------- views ----------
+const todayISO=()=>iso(new Date());
+let curDate=todayISO(), curTab=store.get('ht_tab','day'), freeMin=store.get('ht_freemin',60), freeWin=store.get('ht_freewin','all');
+
+function itemLabel(it,who){
+  const time=it.kind==='holiday'||it.kind==='note'?'All day':range(it.s,it.e);
+  const name=who==='hr'?(HR_NAMES[it.code]||''):((window.HETAL_COURSES||{})[it.code]||'');
+  const meta=[name,it.prof,it.room?('Room '+it.room):'',it.unsure?('Section not published yet ('+it.sec+')'):''].filter(Boolean).join(' · ');
+  return {time,meta};
+}
+function kindClass(it,who){ return it.kind==='exam'?'exam':it.kind==='holiday'?'hol':(it.kind==='blocked'||it.kind==='note'||it.unsure)?'dim':who; }
+
+function vDay(){
+  const {hr,he,free,partial}=dayInfo(curDate);
+  const PX=0.9;                       // px per minute
+  const H=(DAY1-DAY0)*PX;
+  const y=m=>(Math.max(DAY0,Math.min(DAY1,m))-DAY0)*PX;
+  const hol=[...(hr||[]),...(he||[])].filter(i=>i.kind==='holiday'||i.kind==='note');
+  const lane=(list,who)=>{
+    if(!list) return `<div class="empty small" style="padding:8px">No timetable for this date.</div>`;
+    return list.filter(i=>i.kind!=='holiday'&&i.kind!=='note').map(i=>{
+      const top=y(i.s), h=Math.max(22,y(i.e)-y(i.s)-2); const {time}=itemLabel(i,who);
+      return `<div class="blk ${kindClass(i,who)}" style="top:${top}px;height:${h}px" title="${esc(i.title+' · '+time+(i.room?' · '+i.room:''))}"><b>${i.kind==='exam'?'📝 ':''}${esc(i.title)}${i.unsure?' ?':''}</b><span class="t">${esc(time)}${i.room?' · '+esc(i.room):''}</span></div>`;
+    }).join('');
+  };
+  let grid='';
+  for(let m=DAY0;m<=DAY1;m+=60){ grid+=`<div class="hline" style="top:${y(m)}px"></div>`; }
+  const axis=[];for(let m=DAY0;m<=DAY1;m+=60) axis.push(`<div class="hlbl" style="top:${y(m)}px">${(Math.floor(m/60)%12||12)+(m<720?'a':'p')}</div>`);
+  const bands=free.map(([a,b])=>`<div class="fband" style="top:${y(a)+24}px;height:${y(b)-y(a)}px"><span>free ${dur(b-a)}</span></div>`).join('');
+  const nowM=new Date().getHours()*60+new Date().getMinutes();
+  const nowLine=(curDate===todayISO()&&nowM>=DAY0&&nowM<=DAY1)?`<div class="nowline" style="top:${y(nowM)+24}px"></div>`:'';
+  const cnt=l=>l?l.filter(i=>i.kind==='class').length:0;
+  const totFree=free.reduce((s,[a,b])=>s+b-a,0);
+  return `
+  <div class="card">
+    ${hol.map(h=>`<div class="banner hol">🎉 ${esc(h.title)}${(hr||[]).includes(h)?' (Hritik)':' (Hetal)'}</div>`).join('')}
+    <div class="chips" style="margin-bottom:12px">
+      <span class="chip hr">Hritik · ${hr?cnt(hr)+' class'+(cnt(hr)===1?'':'es'):'no data'}</span>
+      <span class="chip he">Hetal · ${he?cnt(he)+' class'+(cnt(he)===1?'':'es'):'no data'}</span>
+      <span class="chip free">🟢 Free together · ${free.length?dur(totFree):'none'}</span>
+      ${[...(hr||[]),...(he||[])].some(i=>i.kind==='exam')?'<span class="chip exam">📝 Exam day</span>':''}
+    </div>
+    ${partial?`<div class="banner ${hr?'he':'hr'} small">Only ${hr?'Hritik':'Hetal'}'s timetable covers this date, so "free together" uses that one only.</div>`:''}
+    <div class="tl">
+      <div></div><div class="lanehead"><span class="dot" style="background:var(--hr)"></span>Hritik</div><div class="lanehead"><span class="dot" style="background:var(--he)"></span>Hetal</div>
+      <div class="axis" style="height:${H}px">${axis.join('')}</div>
+      <div class="lane" style="height:${H}px">${grid}${lane(hr,'hr')}</div>
+      <div class="lane" style="height:${H}px">${grid}${lane(he,'he')}</div>
+      ${bands}${nowLine}
+    </div>
+  </div>
+  <div class="card"><h2>🟢 Free together</h2>${free.length?free.map(([a,b])=>`<div class="row"><div class="when">${ampm(a)}</div><div class="what">until ${ampm(b)} <span class="muted small">· ${dur(b-a)}</span></div></div>`).join(''):'<div class="empty">No common free gap of 30 min or more between 8 AM and 10 PM.</div>'}</div>
+  <div class="card"><h2>Details</h2>${detailList(hr,'hr')}${detailList(he,'he')}</div>`;
+}
+function detailList(list,who){
+  const name=who==='hr'?'Hritik':'Hetal';
+  if(!list) return `<div class="row"><div class="when"><span class="who ${who}">${name}</span></div><div class="what empty">No timetable for this date.</div></div>`;
+  if(!list.length) return `<div class="row"><div class="when"><span class="who ${who}">${name}</span></div><div class="what muted">No classes 🎈</div></div>`;
+  return list.map((it,i)=>{const {time,meta}=itemLabel(it,who);
+    return `<div class="row"><div class="when">${i===0?`<span class="who ${who}">${name}</span><br>`:''}<span class="small">${esc(time)}</span></div><div class="what">${it.kind==='exam'?'<span class="chip exam">Exam</span> ':''}${it.kind==='blocked'?'<span class="chip">Blocked</span> ':''}<b>${esc(it.title)}</b>${meta?`<div class="muted small">${esc(meta)}</div>`:''}</div></div>`;}).join('');
+}
+
+function weekStart(s){ const d=new Date(s+'T00:00'); const k=(d.getDay()+6)%7; d.setDate(d.getDate()-k); return iso(d); }
+function vWeek(){
+  const ws=weekStart(curDate); const t=todayISO();
+  const chips=(list,who)=>!list?'<span class="muted small">no data</span>':list.length?list.map(i=>`<span class="chip ${kindClass(i,who)}">${i.kind==='holiday'||i.kind==='note'?'':ampm(i.s)+' '}${esc(i.kind==='exam'?'📝 '+i.title:i.title)}</span>`).join(''):'<span class="muted small">free day</span>';
+  let html='';
+  for(let k=0;k<7;k++){
+    const d=addDays(ws,k); const {hr,he,free}=dayInfo(d);
+    html+=`<div class="card wd" data-go="${d}">
+      <div class="wdate ${d===t?'today':''}">${fmtShort(d)}${d===t?'<br><span class="small">today</span>':''}</div>
+      <div class="wcol">
+        <div class="chips"><span class="who hr" style="min-width:52px">Hritik</span>${chips(hr,'hr')}</div>
+        <div class="chips"><span class="who he" style="min-width:52px">Hetal</span>${chips(he,'he')}</div>
+        <div class="chips">${free.length?free.filter(([a,b])=>b-a>=60).slice(0,4).map(([a,b])=>`<span class="chip free">🟢 ${range(a,b)}</span>`).join('')||'<span class="muted small">no common 1h+ gap</span>':'<span class="muted small">no common free time</span>'}</div>
+      </div></div>`;
+  }
+  return `<div class="week">${html}</div>`;
+}
+
+function vFree(){
+  const WIN={all:[DAY0,DAY1,'8 AM – 10 PM'],day:[9*60,18*60,'9 AM – 6 PM'],eve:[17*60,DAY1,'5 PM – 10 PM']};
+  const [lo,hi]=WIN[freeWin];
+  let html='', any=false;
+  for(let k=0;k<21;k++){
+    const d=addDays(todayISO(),k); const hr=hritikDay(d), he=hetalDay(d);
+    if(!hr&&!he) continue;
+    let w=freeWindows([hr,he],lo,hi,freeMin);
+    if(k===0){ const now=new Date().getHours()*60+new Date().getMinutes(); w=w.map(([a,b])=>[Math.max(a,now),b]).filter(([a,b])=>b-a>=freeMin); }
+    if(!w.length) continue; any=true;
+    const both=[hr,he].every(l=>l&&!l.filter(isBusy).length);
+    html+=`<div class="row" data-go="${d}" style="cursor:pointer"><div class="when">${fmtShort(d)}${k===0?'<br><span class="small muted">today</span>':''}</div><div class="what"><div class="chips">${both?'<span class="chip hol">🎈 No classes for either</span>':''}${w.map(([a,b])=>`<span class="chip free">${range(a,b)} · ${dur(b-a)}</span>`).join('')}</div>${(!hr||!he)?`<div class="muted small" style="margin-top:4px">Only ${hr?'Hritik':'Hetal'}'s timetable covers this day.</div>`:''}</div></div>`;
+  }
+  return `<div class="card">
+    <h2>🟢 When are we both free? <span class="muted small">(next 3 weeks)</span></h2>
+    <div class="seg">${[30,60,120].map(m=>`<button class="btn ${freeMin===m?'on':''}" data-min="${m}">${m<60?m+' min':m/60+' h'}+</button>`).join('')}
+      <span style="width:8px"></span>${Object.entries(WIN).map(([k,v])=>`<button class="btn ${freeWin===k?'on':''}" data-win="${k}">${v[2]}</button>`).join('')}</div>
+    ${any?html:'<div class="empty">No common gaps that long in this window. Try a shorter length.</div>'}
+  </div>`;
+}
+
+function vExams(){
+  const t=todayISO(); const items=[];
+  const dates=new Set([...SCH.map(r=>r.date),...Object.keys(window.HETAL||{})]);
+  [...dates].sort().forEach(d=>{
+    (hritikDay(d)||[]).filter(i=>i.kind==='exam').forEach(i=>items.push({d,who:'hr',i}));
+    (hetalDay(d)||[]).filter(i=>i.kind==='exam').forEach(i=>items.push({d,who:'he',i}));
+  });
+  const up=items.filter(x=>x.d>=t), past=items.filter(x=>x.d<t);
+  const days=d=>{const n=Math.round((new Date(d+'T00:00')-new Date(t+'T00:00'))/864e5);return n===0?'today':n===1?'tomorrow':'in '+n+' days';};
+  const row=x=>`<div class="row" data-go="${x.d}" style="cursor:pointer"><div class="when">${fmtShort(x.d)}<br><span class="small muted">${x.d>=t?days(x.d):''}</span></div><div class="what"><span class="who ${x.who}">${x.who==='hr'?'Hritik':'Hetal'}</span><div><b>${esc(x.i.title)}</b></div><div class="muted small">${range(x.i.s,x.i.e)}${x.who==='hr'&&HR_NAMES[x.i.code]?' · '+esc(HR_NAMES[x.i.code]):''}${x.who==='he'&&(window.HETAL_COURSES||{})[x.i.code]?' · '+esc(HETAL_COURSES[x.i.code]):''}</div></div></div>`;
+  return `<div class="card"><h2>📝 Upcoming exams</h2>${up.length?up.map(row).join(''):'<div class="empty">No exams listed ahead.</div>'}</div>
+    ${past.length?`<details class="card"><summary class="muted">Past exams (${past.length})</summary>${past.map(row).join('')}</details>`:''}`;
+}
+
+function render(){
+  document.querySelectorAll('#tabs .btn').forEach(b=>b.classList.toggle('on',b.dataset.t===curTab));
+  const nav=(curTab==='day'||curTab==='week')?`<div class="nav">
+      <button class="btn" id="prev" aria-label="Previous">‹</button>
+      <div class="date">${curTab==='week'?'Week of '+fmtShort(weekStart(curDate)):fmtLong(curDate)}</div>
+      <button class="btn" id="next" aria-label="Next">›</button>
+      <button class="btn" id="tod">Today</button>
+      <input type="date" id="pick" class="btn" value="${curDate}" style="padding:6px 8px">
+    </div>`:'';
+  $('#view').innerHTML=nav+({day:vDay,week:vWeek,free:vFree,exams:vExams}[curTab])();
+  const step=curTab==='week'?7:1;
+  const b=(id,fn)=>{const el=$('#'+id); if(el) el.onclick=fn;};
+  b('prev',()=>{curDate=addDays(curDate,-step);render();});
+  b('next',()=>{curDate=addDays(curDate,step);render();});
+  b('tod',()=>{curDate=todayISO();render();});
+  const pk=$('#pick'); if(pk) pk.onchange=()=>{ if(pk.value){curDate=pk.value;render();} };
+  document.querySelectorAll('[data-go]').forEach(el=>el.onclick=()=>{curDate=el.dataset.go;curTab='day';store.set('ht_tab',curTab);render();window.scrollTo(0,0);});
+  document.querySelectorAll('[data-min]').forEach(el=>el.onclick=()=>{freeMin=+el.dataset.min;store.set('ht_freemin',freeMin);render();});
+  document.querySelectorAll('[data-win]').forEach(el=>el.onclick=()=>{freeWin=el.dataset.win;store.set('ht_freewin',freeWin);render();});
+  $('#syncInfo').textContent=syncState.at?(' (synced '+new Date(syncState.at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})+')'):'';
+}
+document.querySelectorAll('#tabs .btn').forEach(b=>b.onclick=()=>{curTab=b.dataset.t;store.set('ht_tab',curTab);render();});
+document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT') return; if(curTab!=='day'&&curTab!=='week') return;
+  if(e.key==='ArrowLeft'){curDate=addDays(curDate,curTab==='week'?-7:-1);render();} if(e.key==='ArrowRight'){curDate=addDays(curDate,curTab==='week'?7:1);render();} });
+$('#hSrc').textContent=window.HETAL_SOURCE||'';
+
+// ---------- live sync of Hritik's Term V sheet (gviz JSONP; same parser as the tracker, incl. blank-date fix) ----------
+function syncNow(interactive){
+  const cb='__hs'+Math.random().toString(36).slice(2,8);
+  const done=()=>{ try{delete window[cb];}catch(e){window[cb]=undefined;} };
+  window[cb]=function(resp){
+    try{
+      if(!resp||resp.status==='error'||!resp.table) throw new Error('sheet unavailable');
+      const recs=[]; let curD=null;
+      resp.table.rows.forEach(r=>{
+        const c=r.c||[]; const gv=i=>(c[i]&&c[i].v!=null)?c[i].v:'';
+        const dv=gv(0);
+        if(dv){
+          if(typeof dv==='string'){const dm=dv.match(/Date\((\d+),(\d+),(\d+)/); if(dm) curD=`${dm[1]}-${String(+dm[2]+1).padStart(2,'0')}-${String(dm[3]).padStart(2,'0')}`;}
+          else if(typeof dv==='number'){curD=new Date(Date.UTC(1899,11,30)+dv*864e5).toISOString().slice(0,10);}
+        } else if(curD){
+          const dn=String(gv(1)||'').trim().slice(0,3).toLowerCase();
+          if(/^(mon|tue|wed|thu|fri|sat|sun)$/.test(dn) && dayName(curD).slice(0,3).toLowerCase()!==dn){
+            let d=curD; for(let k=0;k<7;k++){ d=addDays(d,1); if(dayName(d).slice(0,3).toLowerCase()===dn) break; } curD=d;
+          }
+        }
+        const sec=String(gv(2)||'').trim();
+        if(!curD||!/^(Section A|Section B|Single Section)$/i.test(sec)) return;
+        recs.push({date:curD,section:sec,slots:[3,4,5,7,8,9,10].map(i=>String(gv(i)||'').replace(/\s+/g,' ').trim())});
+      });
+      if(!validSched(recs)) throw new Error('no timetable rows found');
+      const changed=JSON.stringify(recs)!==JSON.stringify(SCH);
+      SCH=recs; store.set('ht_sched',recs); syncState.at=Date.now(); store.set('ht_sync',syncState);
+      render();
+      if(changed) toast('🔄 Hritik\'s timetable updated from the sheet'); else if(interactive) toast('✅ Already up to date');
+    }catch(e){ if(interactive) toast('⚠️ Sync failed: '+e.message); }
+    done();
+  };
+  const s=document.createElement('script');
+  s.src='https://docs.google.com/spreadsheets/d/'+LIVE_SHEET+'/gviz/tq?tqx=out:json;responseHandler:'+cb+'&sheet=Schedule&headers=0';
+  s.onload=()=>s.remove(); s.onerror=()=>{s.remove();done();if(interactive)toast('⚠️ Could not reach the sheet (offline?) — showing the saved copy');};
+  document.head.appendChild(s);
+  if(interactive) toast('⏳ Syncing…');
+}
+$('#syncBtn').onclick=()=>syncNow(true);
+
+render();
+syncNow(false);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&Date.now()-(syncState.at||0)>5*60e3) syncNow(false); });
+</script>
+</body>
+</html>
