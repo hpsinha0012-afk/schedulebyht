@@ -116,7 +116,7 @@
   <footer>
     Hritik: live from the Term V sheet<span id="syncInfo"></span> · Hetal: <span id="hSrc"></span><br>
     Free time is counted between 8 AM and 10 PM, gaps of 30 min or more.<br>
-    made for Hritik &amp; Hetal 💞 · <span id="build">build v2026-10-26.1200</span>
+    made for Hritik &amp; Hetal 💞 · <span id="build">build v2026-10-31.1200</span>
   </footer>
 </div>
 <div class="toast" id="toast"></div>
@@ -206,10 +206,86 @@ function hritikDay(date){
 const titleCase=s=>s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 
 // ---------- Hetal (PGP1, Section B) ----------
+const HE_SHEET='13cMOymm5wUIYSZJTrO6p6ddb7D5ZDlkV3Verzy9a0NQ';   // public IMPORTRANGE mirror of the PGP1 timetable
+const HE_SLOTS=[['09:30','11:00'],['11:15','12:45'],['12:45','14:00'],['14:00','15:30'],['15:45','17:15']];
+const HE_CODE=/^(BC|DS|FM|MA|MEA|MM|OB|OM|SM)\s*-?\s*(II|I|!)?(?![A-Za-z])/;
+const HE_HOL=/Birthday|Dussehra|Diwali|Jayanti|Christmas|Holiday/i;
+const heClean=s=>String(s||'').replace(/\s+/g,' ').trim();
+const heKey=s=>{ const t=heClean(s).replace(/\(?\s*(?:CLASSROOM\s*-?\s*)?\b[AB]\d{2}\b\s*\)?/ig,'').replace(/\(?\s*(?:Prof|Dr)\.?.*$/i,'').replace(/\)+\s*$/,''); return t.replace(/\s+/g,'').replace('!','I').toUpperCase(); };
+// One timetable cell -> an item for Hetal. Value-only IMPORTRANGE loses merges, so span comes from: time in the text,
+// else the same item in the PDF copy, else exams/double sessions/guest sessions taking the next slot when it is empty.
+function heItem(date,raw,col,nextEmpty){
+  const pdf=(window.HETAL||{})[date]||[];
+  let t=heClean(raw);
+  const o={start:HE_SLOTS[col][0],end:HE_SLOTS[col][1],kind:'event'};
+  const tm=t.match(/\(\s*(\d{1,2})\s*[:.]\s*(\d{2})\s*(AM|PM)?\s*-\s*(\d{1,2})\s*[:.]\s*(\d{2})\s*(AM|PM)?\s*\)/i);
+  const to24=(h,m,ap)=>{h=+h;ap=(ap||'').toUpperCase();if(ap==='PM'&&h<12)h+=12;else if(ap==='AM'&&h===12)h=0;else if(!ap&&h<8)h+=12;return String(h).padStart(2,'0')+':'+m;};
+  if(tm){ o.start=to24(tm[1],tm[2],tm[3]); o.end=to24(tm[4],tm[5],tm[6]||tm[3]); t=heClean(t.replace(tm[0],'')); }
+  const rm=t.match(/\(?\s*(?:CLASSROOM\s*-?\s*)?\b([AB]\d{2})\b\s*\)?/i);
+  if(rm){ o.room=rm[1].toUpperCase(); t=heClean(t.replace(rm[0],'')); }
+  const pf=t.match(/\(?\s*((?:Prof|Dr)\.?\s.*?)\s*\)*\s*$/);
+  if(pf){ o.prof=heClean(pf[1]); t=heClean(t.slice(0,pf.index)); }
+  t=heClean(t.replace(/\(\s*Offline\s*\)/i,'(Offline)'));
+  if((t.match(/\)/g)||[]).length>(t.match(/\(/g)||[]).length) t=heClean(t.replace(/\)+\s*$/,''));
+  t=t.replace('OM-!','OM-I').replace(/^([A-Z]{2,3})\s*-\s*(II|I)\b/,'$1-$2').replace(/^([A-Z]{2,3}(?:-(?:II|I))?)\s*-\s*(\d)/,'$1-$2').replace(/(\d)\s*&\s*(\d)/,'$1&$2');
+  const cm=t.match(HE_CODE);
+  if(cm) o.code=cm[1]+(cm[2]?'-'+cm[2].replace('!','I'):'');
+  o.title=t;
+  if(/MID\s*-?\s*TERM|END\s*-?\s*TERM|\bEXAM/i.test(t)) o.kind='exam';
+  else if(HE_HOL.test(t)){ o.kind='holiday'; o.start='00:00'; o.end='23:59'; }
+  else if(cm){ o.kind='class'; if(!o.room) o.room='B02'; }
+  if(!tm&&o.kind!=='holiday'){
+    const same=pdf.find(p=>heKey(p.title)===heKey(t)&&p.start===o.start);
+    if(same) o.end=same.end;
+    else if(nextEmpty&&(o.kind==='exam'||/&|Guest/i.test(t))&&(col===0||col===3)) o.end=HE_SLOTS[col+1][1];
+  }
+  return o;
+}
+function parseHetal(rows){
+  const days={}; let cur=null;
+  rows.forEach(r=>{
+    const c=r.c||[]; const gv=i=>(c[i]&&c[i].v!=null)?c[i].v:'';
+    const dm=String(gv(0)).match(/Date\((\d+),(\d+),(\d+)/);
+    if(dm) cur=`${dm[1]}-${String(+dm[2]+1).padStart(2,'0')}-${String(dm[3]).padStart(2,'0')}`;
+    else if(cur){ const dn=String(gv(1)||'').trim().slice(0,3).toLowerCase();
+      if(/^(mon|tue|wed|thu|fri|sat|sun)$/.test(dn)&&dayName(cur).slice(0,3).toLowerCase()!==dn){ let d=cur; for(let k=0;k<7;k++){ d=addDays(d,1); if(dayName(d).slice(0,3).toLowerCase()===dn) break; } cur=d; } }
+    const sec=String(gv(2)||'').trim();
+    if(!cur||!/^[ABCD]$/.test(sec)) return;
+    (days[cur]=days[cur]||{})[sec]=[3,4,5,6,7].map(i=>heClean(gv(i)));
+  });
+  const bKeys=new Set();
+  Object.values(days).forEach(d=>(d.B||[]).forEach(x=>{ if(x) bKeys.add(heKey(x)); }));
+  const out={}, aDates={};
+  Object.keys(days).sort().forEach(date=>{
+    const d=days[date], A=d.A||[],B=d.B||[],C=d.C||[],D=d.D||[];
+    const blank=i=>!A[i]&&!B[i]&&!C[i]&&!D[i];
+    const items=[];
+    for(let i=0;i<5;i++){
+      if(B[i]) items.push(heItem(date,B[i],i,i<4&&blank(i+1)));
+      // a cell merged across sections keeps its text only in the top (A) row: count it for B unless B has its own slot for it
+      else if(A[i]&&!C[i]&&!D[i]&&!bKeys.has(heKey(A[i]))){
+        const it=heItem(date,A[i],i,i<4&&blank(i+1)); it.fromA=heKey(A[i]);
+        (aDates[it.fromA]=aDates[it.fromA]||new Set()).add(date);
+        items.push(it);
+      }
+    }
+    out[date]=items;
+  });
+  // the same session in A's row on two dates: without the merges we cannot tell which one is B's, so flag both instead of guessing
+  Object.values(out).forEach(l=>l.forEach(it=>{ if(it.fromA&&it.kind==='class'&&aDates[it.fromA].size>1){ it.unsure=true; it.why='Listed on '+aDates[it.fromA].size+' dates in the sheet; check which one is Section B\'s'; } delete it.fromA; }));
+  // end-term blocks are red with no subject in the PDF; colours do not survive the mirror, so keep them unless the sheet now fills that time
+  Object.entries(window.HETAL||{}).forEach(([date,list])=>{ if(!out[date]) return;
+    list.filter(p=>/TBA/.test(p.title)).forEach(p=>{ const a=toMin(p.start),b=toMin(p.end);
+      if(!out[date].some(i=>toMin(i.start)<b&&toMin(i.end)>a)) out[date].push(p); }); });
+  return out;
+}
+const validHetal=o=>o&&typeof o==='object'&&Object.keys(o).length>=60&&Object.values(o).filter(a=>a.length).length>=30;
+let HE_LIVE=null;
+{ const c=store.get('ht_hetal',null); if(validHetal(c)) HE_LIVE=c; }
 function hetalDay(date){
-  const a=(window.HETAL||{})[date];
+  const a=(HE_LIVE||window.HETAL||{})[date];
   if(!a) return null;
-  return a.map(o=>({s:toMin(o.start),e:toMin(o.end),kind:o.kind,code:o.code||'',title:o.title,prof:o.prof||'',room:o.room||'',note:o.note||''})).sort((x,y)=>x.s-y.s);
+  return a.map(o=>({s:toMin(o.start),e:toMin(o.end),kind:o.kind,code:o.code||'',title:o.title,prof:o.prof||'',room:o.room||'',note:o.note||'',unsure:!!o.unsure,why:o.why||''})).sort((x,y)=>x.s-y.s);
 }
 
 // ---------- free-time engine ----------
@@ -237,7 +313,7 @@ let curDate=todayISO(), curTab=store.get('ht_tab','day'), freeMin=store.get('ht_
 function itemLabel(it,who){
   const time=it.kind==='holiday'||it.kind==='note'?'All day':range(it.s,it.e);
   const name=who==='hr'?(HR_NAMES[it.code]||''):((window.HETAL_COURSES||{})[it.code]||'');
-  const meta=[name,it.prof,it.room?('Room '+it.room):'',it.unsure?('Section not published yet ('+it.sec+')'):''].filter(Boolean).join(' · ');
+  const meta=[name,it.prof,it.room?('Room '+it.room):'',it.unsure?(it.why||('Section not published yet ('+it.sec+')')):''].filter(Boolean).join(' · ');
   return {time,meta};
 }
 function kindClass(it,who){ return it.kind==='exam'?'exam':it.kind==='holiday'?'hol':(it.kind==='blocked'||it.kind==='note'||it.unsure)?'dim':who; }
@@ -365,11 +441,11 @@ function render(){
   document.querySelectorAll('[data-min]').forEach(el=>el.onclick=()=>{freeMin=+el.dataset.min;store.set('ht_freemin',freeMin);render();});
   document.querySelectorAll('[data-win]').forEach(el=>el.onclick=()=>{freeWin=el.dataset.win;store.set('ht_freewin',freeWin);render();});
   $('#syncInfo').textContent=syncState.at?(' (synced '+new Date(syncState.at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})+')'):'';
+  $('#hSrc').textContent=HE_LIVE?'live from the PGP1 sheet':(window.HETAL_SOURCE||'');
 }
 document.querySelectorAll('#tabs .btn').forEach(b=>b.onclick=()=>{curTab=b.dataset.t;store.set('ht_tab',curTab);render();});
 document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT') return; if(curTab!=='day'&&curTab!=='week') return;
   if(e.key==='ArrowLeft'){curDate=addDays(curDate,curTab==='week'?-7:-1);render();} if(e.key==='ArrowRight'){curDate=addDays(curDate,curTab==='week'?7:1);render();} });
-$('#hSrc').textContent=window.HETAL_SOURCE||'';
 
 // ---------- live sync of Hritik's Term V sheet (gviz JSONP; same parser as the tracker, incl. blank-date fix) ----------
 function syncNow(interactive){
@@ -409,11 +485,33 @@ function syncNow(interactive){
   document.head.appendChild(s);
   if(interactive) toast('⏳ Syncing…');
 }
-$('#syncBtn').onclick=()=>syncNow(true);
+function syncHetal(interactive){
+  const cb='__he'+Math.random().toString(36).slice(2,8);
+  const done=()=>{ try{delete window[cb];}catch(e){window[cb]=undefined;} };
+  window[cb]=function(resp){
+    try{
+      if(!resp||resp.status==='error'||!resp.table) throw new Error('sheet unavailable');
+      const parsed=parseHetal(resp.table.rows);
+      if(!validHetal(parsed)) throw new Error('no timetable rows found');
+      const changed=JSON.stringify(parsed)!==JSON.stringify(HE_LIVE);
+      const first=!HE_LIVE;
+      HE_LIVE=parsed; store.set('ht_hetal',parsed); store.set('ht_hetal_at',Date.now());
+      render();
+      if(changed&&!first) toast('🔄 Hetal\'s timetable updated from the sheet');
+    }catch(e){ if(interactive) toast('⚠️ Hetal\'s sheet: '+e.message+' — showing the saved copy'); }
+    done();
+  };
+  const s=document.createElement('script');
+  s.src='https://docs.google.com/spreadsheets/d/'+HE_SHEET+'/gviz/tq?tqx=out:json;responseHandler:'+cb+'&headers=0';
+  s.onload=()=>s.remove(); s.onerror=()=>{s.remove();done();if(interactive)toast('⚠️ Could not reach Hetal\'s sheet — showing the saved copy');};
+  document.head.appendChild(s);
+}
+const syncAll=i=>{ syncNow(i); syncHetal(i); };
+$('#syncBtn').onclick=()=>syncAll(true);
 
 render();
-syncNow(false);
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&Date.now()-(syncState.at||0)>5*60e3) syncNow(false); });
+syncAll(false);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&Date.now()-(syncState.at||0)>5*60e3) syncAll(false); });
 </script>
 </body>
 </html>
