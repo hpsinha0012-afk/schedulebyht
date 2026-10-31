@@ -111,18 +111,18 @@
     <button class="btn" data-t="exams">📝 Exams</button>
   </div>
 
+  <div class="banner he" id="heWarn" style="display:none"></div>
   <div id="view"></div>
 
   <footer>
     Hritik: live from the Term V sheet<span id="syncInfo"></span> · Hetal: <span id="hSrc"></span><br>
     Free time is counted between 8 AM and 10 PM, gaps of 30 min or more.<br>
-    made for Hritik &amp; Hetal 💞 · <span id="build">build v2026-10-31.1200</span>
+    made for Hritik &amp; Hetal 💞 · <span id="build">build v2026-10-31.1500</span>
   </footer>
 </div>
 <div class="toast" id="toast"></div>
 
 <script src="hritik.js"></script>
-<script src="hetal.js"></script>
 <script>
 'use strict';
 const $=s=>document.querySelector(s);
@@ -212,10 +212,10 @@ const HE_CODE=/^(BC|DS|FM|MA|MEA|MM|OB|OM|SM)\s*-?\s*(II|I|!)?(?![A-Za-z])/;
 const HE_HOL=/Birthday|Dussehra|Diwali|Jayanti|Christmas|Holiday/i;
 const heClean=s=>String(s||'').replace(/\s+/g,' ').trim();
 const heKey=s=>{ const t=heClean(s).replace(/\(?\s*(?:CLASSROOM\s*-?\s*)?\b[AB]\d{2}\b\s*\)?/ig,'').replace(/\(?\s*(?:Prof|Dr)\.?.*$/i,'').replace(/\)+\s*$/,''); return t.replace(/\s+/g,'').replace('!','I').toUpperCase(); };
+const HE_COURSES={'OB-II':'Organizational Behavior – II','MM-II':'Marketing Management – II','OM-I':'Operations Management – I','MEA':'Macroeconomic Analysis','FM-I':'Financial Management – I','SM-I':'Strategic Management – I','BC-II':'Business Communication – II','MA':'Management Accounting','DS-II':'Decision Science – II'};
 // One timetable cell -> an item for Hetal. Value-only IMPORTRANGE loses merges, so span comes from: time in the text,
-// else the same item in the PDF copy, else exams/double sessions/guest sessions taking the next slot when it is empty.
-function heItem(date,raw,col,nextEmpty){
-  const pdf=(window.HETAL||{})[date]||[];
+// else exams/double sessions/guest sessions taking the next slot when it is empty, else an event alone on the day taking the whole day.
+function heItem(raw,col,nextEmpty,aloneOnDay){
   let t=heClean(raw);
   const o={start:HE_SLOTS[col][0],end:HE_SLOTS[col][1],kind:'event'};
   const tm=t.match(/\(\s*(\d{1,2})\s*[:.]\s*(\d{2})\s*(AM|PM)?\s*-\s*(\d{1,2})\s*[:.]\s*(\d{2})\s*(AM|PM)?\s*\)/i);
@@ -235,9 +235,8 @@ function heItem(date,raw,col,nextEmpty){
   else if(HE_HOL.test(t)){ o.kind='holiday'; o.start='00:00'; o.end='23:59'; }
   else if(cm){ o.kind='class'; if(!o.room) o.room='B02'; }
   if(!tm&&o.kind!=='holiday'){
-    const same=pdf.find(p=>heKey(p.title)===heKey(t)&&p.start===o.start);
-    if(same) o.end=same.end;
-    else if(nextEmpty&&(o.kind==='exam'||/&|Guest/i.test(t))&&(col===0||col===3)) o.end=HE_SLOTS[col+1][1];
+    if(nextEmpty&&(o.kind==='exam'||/&|Guest/i.test(t))&&(col===0||col===3)) o.end=HE_SLOTS[col+1][1];
+    else if(o.kind==='event'&&col===0&&aloneOnDay) o.end=HE_SLOTS[4][1];
   }
   return o;
 }
@@ -259,12 +258,13 @@ function parseHetal(rows){
   Object.keys(days).sort().forEach(date=>{
     const d=days[date], A=d.A||[],B=d.B||[],C=d.C||[],D=d.D||[];
     const blank=i=>!A[i]&&!B[i]&&!C[i]&&!D[i];
+    const filled=[0,1,2,3,4].filter(i=>!blank(i)).length;
     const items=[];
     for(let i=0;i<5;i++){
-      if(B[i]) items.push(heItem(date,B[i],i,i<4&&blank(i+1)));
+      if(B[i]) items.push(heItem(B[i],i,i<4&&blank(i+1),filled===1));
       // a cell merged across sections keeps its text only in the top (A) row: count it for B unless B has its own slot for it
       else if(A[i]&&!C[i]&&!D[i]&&!bKeys.has(heKey(A[i]))){
-        const it=heItem(date,A[i],i,i<4&&blank(i+1)); it.fromA=heKey(A[i]);
+        const it=heItem(A[i],i,i<4&&blank(i+1),filled===1); it.fromA=heKey(A[i]);
         (aDates[it.fromA]=aDates[it.fromA]||new Set()).add(date);
         items.push(it);
       }
@@ -273,17 +273,14 @@ function parseHetal(rows){
   });
   // the same session in A's row on two dates: without the merges we cannot tell which one is B's, so flag both instead of guessing
   Object.values(out).forEach(l=>l.forEach(it=>{ if(it.fromA&&it.kind==='class'&&aDates[it.fromA].size>1){ it.unsure=true; it.why='Listed on '+aDates[it.fromA].size+' dates in the sheet; check which one is Section B\'s'; } delete it.fromA; }));
-  // end-term blocks are red with no subject in the PDF; colours do not survive the mirror, so keep them unless the sheet now fills that time
-  Object.entries(window.HETAL||{}).forEach(([date,list])=>{ if(!out[date]) return;
-    list.filter(p=>/TBA/.test(p.title)).forEach(p=>{ const a=toMin(p.start),b=toMin(p.end);
-      if(!out[date].some(i=>toMin(i.start)<b&&toMin(i.end)>a)) out[date].push(p); }); });
   return out;
 }
 const validHetal=o=>o&&typeof o==='object'&&Object.keys(o).length>=60&&Object.values(o).filter(a=>a.length).length>=30;
-let HE_LIVE=null;
-{ const c=store.get('ht_hetal',null); if(validHetal(c)) HE_LIVE=c; }
+// The sheet is the only source for Hetal; this browser's last successful sync is shown until the fresh one arrives.
+let HE_LIVE=null, heAt=0, heStatus='syncing';
+{ const c=store.get('ht_hetal2',null); if(validHetal(c)){ HE_LIVE=c; heAt=store.get('ht_hetal2_at',0); } }
 function hetalDay(date){
-  const a=(HE_LIVE||window.HETAL||{})[date];
+  const a=(HE_LIVE||{})[date];
   if(!a) return null;
   return a.map(o=>({s:toMin(o.start),e:toMin(o.end),kind:o.kind,code:o.code||'',title:o.title,prof:o.prof||'',room:o.room||'',note:o.note||'',unsure:!!o.unsure,why:o.why||''})).sort((x,y)=>x.s-y.s);
 }
@@ -312,7 +309,7 @@ let curDate=todayISO(), curTab=store.get('ht_tab','day'), freeMin=store.get('ht_
 
 function itemLabel(it,who){
   const time=it.kind==='holiday'||it.kind==='note'?'All day':range(it.s,it.e);
-  const name=who==='hr'?(HR_NAMES[it.code]||''):((window.HETAL_COURSES||{})[it.code]||'');
+  const name=who==='hr'?(HR_NAMES[it.code]||''):(HE_COURSES[it.code]||'');
   const meta=[name,it.prof,it.room?('Room '+it.room):'',it.unsure?(it.why||('Section not published yet ('+it.sec+')')):''].filter(Boolean).join(' · ');
   return {time,meta};
 }
@@ -409,14 +406,14 @@ function vFree(){
 
 function vExams(){
   const t=todayISO(); const items=[];
-  const dates=new Set([...SCH.map(r=>r.date),...Object.keys(window.HETAL||{})]);
+  const dates=new Set([...SCH.map(r=>r.date),...Object.keys(HE_LIVE||{})]);
   [...dates].sort().forEach(d=>{
     (hritikDay(d)||[]).filter(i=>i.kind==='exam').forEach(i=>items.push({d,who:'hr',i}));
     (hetalDay(d)||[]).filter(i=>i.kind==='exam').forEach(i=>items.push({d,who:'he',i}));
   });
   const up=items.filter(x=>x.d>=t), past=items.filter(x=>x.d<t);
   const days=d=>{const n=Math.round((new Date(d+'T00:00')-new Date(t+'T00:00'))/864e5);return n===0?'today':n===1?'tomorrow':'in '+n+' days';};
-  const row=x=>`<div class="row" data-go="${x.d}" style="cursor:pointer"><div class="when">${fmtShort(x.d)}<br><span class="small muted">${x.d>=t?days(x.d):''}</span></div><div class="what"><span class="who ${x.who}">${x.who==='hr'?'Hritik':'Hetal'}</span><div><b>${esc(x.i.title)}</b></div><div class="muted small">${range(x.i.s,x.i.e)}${x.who==='hr'&&HR_NAMES[x.i.code]?' · '+esc(HR_NAMES[x.i.code]):''}${x.who==='he'&&(window.HETAL_COURSES||{})[x.i.code]?' · '+esc(HETAL_COURSES[x.i.code]):''}</div></div></div>`;
+  const row=x=>`<div class="row" data-go="${x.d}" style="cursor:pointer"><div class="when">${fmtShort(x.d)}<br><span class="small muted">${x.d>=t?days(x.d):''}</span></div><div class="what"><span class="who ${x.who}">${x.who==='hr'?'Hritik':'Hetal'}</span><div><b>${esc(x.i.title)}</b></div><div class="muted small">${range(x.i.s,x.i.e)}${x.who==='hr'&&HR_NAMES[x.i.code]?' · '+esc(HR_NAMES[x.i.code]):''}${x.who==='he'&&HE_COURSES[x.i.code]?' · '+esc(HE_COURSES[x.i.code]):''}</div></div></div>`;
   return `<div class="card"><h2>📝 Upcoming exams</h2>${up.length?up.map(row).join(''):'<div class="empty">No exams listed ahead.</div>'}</div>
     ${past.length?`<details class="card"><summary class="muted">Past exams (${past.length})</summary>${past.map(row).join('')}</details>`:''}`;
 }
@@ -441,14 +438,17 @@ function render(){
   document.querySelectorAll('[data-min]').forEach(el=>el.onclick=()=>{freeMin=+el.dataset.min;store.set('ht_freemin',freeMin);render();});
   document.querySelectorAll('[data-win]').forEach(el=>el.onclick=()=>{freeWin=el.dataset.win;store.set('ht_freewin',freeWin);render();});
   $('#syncInfo').textContent=syncState.at?(' (synced '+new Date(syncState.at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})+')'):'';
-  $('#hSrc').textContent=HE_LIVE?'live from the PGP1 sheet':(window.HETAL_SOURCE||'');
+  $('#hSrc').textContent=heAt?('live from the PGP1 sheet (synced '+new Date(heAt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})+')'):'PGP1 sheet';
+  const warn=$('#heWarn');
+  warn.style.display=heStatus==='failed'?'block':'none';
+  warn.textContent=heStatus==='failed'?(HE_LIVE?'⚠️ This browser could not read Hetal\'s sheet, so her timetable below is from the last successful sync. Tap Sync to retry, or try another browser.':'⚠️ This browser could not read Hetal\'s sheet, so her timetable cannot be shown. Tap Sync to retry, or try another browser.'):'';
 }
 document.querySelectorAll('#tabs .btn').forEach(b=>b.onclick=()=>{curTab=b.dataset.t;store.set('ht_tab',curTab);render();});
 document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT') return; if(curTab!=='day'&&curTab!=='week') return;
   if(e.key==='ArrowLeft'){curDate=addDays(curDate,curTab==='week'?-7:-1);render();} if(e.key==='ArrowRight'){curDate=addDays(curDate,curTab==='week'?7:1);render();} });
 
 // ---------- live sync of Hritik's Term V sheet (gviz JSONP; same parser as the tracker, incl. blank-date fix) ----------
-function syncNow(interactive){
+function syncNow(report){
   const cb='__hs'+Math.random().toString(36).slice(2,8);
   const done=()=>{ try{delete window[cb];}catch(e){window[cb]=undefined;} };
   window[cb]=function(resp){
@@ -475,19 +475,20 @@ function syncNow(interactive){
       const changed=JSON.stringify(recs)!==JSON.stringify(SCH);
       SCH=recs; store.set('ht_sched',recs); syncState.at=Date.now(); store.set('ht_sync',syncState);
       render();
-      if(changed) toast('🔄 Hritik\'s timetable updated from the sheet'); else if(interactive) toast('✅ Already up to date');
-    }catch(e){ if(interactive) toast('⚠️ Sync failed: '+e.message); }
+      report(changed?'changed':'same');
+    }catch(e){ report('failed'); }
     done();
   };
   const s=document.createElement('script');
-  s.src='https://docs.google.com/spreadsheets/d/'+LIVE_SHEET+'/gviz/tq?tqx=out:json;responseHandler:'+cb+'&sheet=Schedule&headers=0';
-  s.onload=()=>s.remove(); s.onerror=()=>{s.remove();done();if(interactive)toast('⚠️ Could not reach the sheet (offline?) — showing the saved copy');};
+  s.src='https://docs.google.com/spreadsheets/d/'+LIVE_SHEET+'/gviz/tq?tqx=out:json;responseHandler:'+cb+'&sheet=Schedule&headers=0&_='+Date.now();
+  s.onload=()=>{ s.remove(); if(window[cb]){ done(); report('failed'); } };   // a sign-in redirect "loads" as HTML without running the callback
+  s.onerror=()=>{ s.remove(); done(); report('failed'); };
   document.head.appendChild(s);
-  if(interactive) toast('⏳ Syncing…');
 }
-function syncHetal(interactive){
+function syncHetal(report){
   const cb='__he'+Math.random().toString(36).slice(2,8);
   const done=()=>{ try{delete window[cb];}catch(e){window[cb]=undefined;} };
+  const failed=()=>{ heStatus='failed'; render(); report('failed'); };
   window[cb]=function(resp){
     try{
       if(!resp||resp.status==='error'||!resp.table) throw new Error('sheet unavailable');
@@ -495,18 +496,31 @@ function syncHetal(interactive){
       if(!validHetal(parsed)) throw new Error('no timetable rows found');
       const changed=JSON.stringify(parsed)!==JSON.stringify(HE_LIVE);
       const first=!HE_LIVE;
-      HE_LIVE=parsed; store.set('ht_hetal',parsed); store.set('ht_hetal_at',Date.now());
+      heAt=Date.now(); heStatus='live';
+      HE_LIVE=parsed; store.set('ht_hetal2',parsed); store.set('ht_hetal2_at',heAt);
       render();
-      if(changed&&!first) toast('🔄 Hetal\'s timetable updated from the sheet');
-    }catch(e){ if(interactive) toast('⚠️ Hetal\'s sheet: '+e.message+' — showing the saved copy'); }
+      report(changed&&!first?'changed':'same');
+    }catch(e){ failed(); }
     done();
   };
   const s=document.createElement('script');
-  s.src='https://docs.google.com/spreadsheets/d/'+HE_SHEET+'/gviz/tq?tqx=out:json;responseHandler:'+cb+'&headers=0';
-  s.onload=()=>s.remove(); s.onerror=()=>{s.remove();done();if(interactive)toast('⚠️ Could not reach Hetal\'s sheet — showing the saved copy');};
+  s.src='https://docs.google.com/spreadsheets/d/'+HE_SHEET+'/gviz/tq?tqx=out:json;responseHandler:'+cb+'&headers=0&_='+Date.now();
+  s.onload=()=>{ s.remove(); if(window[cb]){ done(); failed(); } };
+  s.onerror=()=>{ s.remove(); done(); failed(); };
   document.head.appendChild(s);
 }
-const syncAll=i=>{ syncNow(i); syncHetal(i); };
+// Both timetables, every time; the button reports one combined result. Date.now() in the URLs defeats browser caching.
+function syncAll(interactive){
+  const res={}; let left=2;
+  const rep=who=>r=>{ res[who]=r; if(--left) return;
+    const names=k=>Object.keys(res).filter(w=>res[w]===k).join(' & ');
+    if(names('failed')){ if(interactive) toast('⚠️ Could not read '+names('failed')+'\'s sheet in this browser'); }
+    else if(names('changed')) toast('🔄 '+names('changed')+'\'s timetable updated');
+    else if(interactive) toast('✅ Synced: no changes in the sheets');
+  };
+  if(interactive) toast('⏳ Syncing…');
+  syncNow(rep('Hritik')); syncHetal(rep('Hetal'));
+}
 $('#syncBtn').onclick=()=>syncAll(true);
 
 render();
